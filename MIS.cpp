@@ -38,7 +38,7 @@ class HumanResources : public Employee {
 
 class EmployeeService {
     public:
-        bool authenticate(string username, string password, vector<Employee> employees, Employee currUser) {
+        bool authenticate(string username, string password, vector<Employee> employees, Employee &currUser) {
             for(int i = 0; i < employees.size(); i++) {
                 if(employees[i].username == username && employees[i].password == password) {
                     currUser = employees[i];
@@ -57,16 +57,151 @@ class EmployeeService {
 
         void viewEmployees(Employee currUser, vector<Employee> employees) {
             if(currUser.role == "Manager" || currUser.role == "HumanResources") {
+                cout << "Names: " << endl;
                 for(int i = 0; i < employees.size(); i++) {
-                    cout << "Name: " << employees[i].name << endl;
+                    cout << employees[i].name << endl;
                 }
             }
         }
+
+        void searchEmployee(string name, vector<Employee> employees) {
+            for(int i = 0; i < employees.size(); i++) {
+                if(employees[i].name == name) {
+                    cout << "Employee found!" << endl;
+                    cout << "Name: " << employees[i].name << endl;
+                    cout << "Username: " << employees[i].username << endl;
+                    cout << "Role: " << employees[i].role << endl;
+                    return;
+                }
+            }
+            cout << "Employee not found!" << endl;
+        }
+
+        void addEmployee(vector<Employee> &employees) {
+            string name;
+            int uid;
+            string username;
+            string password;
+            string role;
+            cout << "Enter name: ";
+            getline(cin, name);
+            cout << "Enter username: ";
+            getline(cin, username);
+            cout << "Enter password: ";
+            getline(cin, password);
+            cout << "Select role: " << endl;
+            cout << "1. General Employee" << endl;
+            cout << "2. Manager" << endl;
+            cout << "3. Human Resources" << endl;
+            
+            // select role
+            string roleChoice;
+            while (roleChoice != "1" && roleChoice != "2" && roleChoice != "3") {
+                cout << "Select role: ";
+                getline(cin, roleChoice);
+                if(roleChoice == "1") {
+                    role = "GeneralEmployee";
+                } else if(roleChoice == "2") {
+                    role = "Manager";
+                } else if(roleChoice == "3") {
+                    role = "HumanResources";
+                } else {
+                    cout << "Invalid role! Please enter number beside role name" << endl;
+                }
+            }
+
+            // generate unique id, increment by 1 because its easy lol
+            uid = employees.size() + 1;
+
+            if(role == "GeneralEmployee") {
+                Employee employee(name, uid, username, password);
+                employees.push_back(employee);
+            } else if(role == "Manager") {
+                Manager employee(name, uid, username, password);
+                employees.push_back(employee);
+            } else if(role == "HumanResources") {
+                HumanResources employee(name, uid, username, password);
+                employees.push_back(employee);
+            }
+            cout << "Employee added!" << endl;
+        }
 };
 
-// Create a vector of employees globally
-vector<Employee> employees;
-Employee currUser("Guest", 0, "guest", "guest");
+    // Create a vector of employees globally
+    vector<Employee> employees;
+    Employee currUser = Employee("", 0, "", "");
+
+    // Display commands based on user role:
+    string displayCommands(Employee currUser) {
+        cout << "List of commands: " << endl;
+        if (currUser.role == "GeneralEmployee") {
+            cout << "0. Exit" << endl;
+            cout << "1. View your profile" << endl;
+        } else if (currUser.role == "Manager") {
+            cout << "0. Exit" << endl;
+            cout << "1. View your profile" << endl;
+            cout << "2. View all employees" << endl;
+            cout << "3. Search for an employee" << endl;
+        } else if (currUser.role == "HumanResources") {
+            cout << "0. Exit" << endl;
+            cout << "1. View your profile" << endl;
+            cout << "2. View all employees" << endl;
+            cout << "3. Search for an employee" << endl;
+            cout << "4. Add new employee" << endl;
+            cout << "5. Remove employee" << endl;
+            cout << "6. Update employee" << endl;
+        };
+        string command;
+        cout << "Enter your command: ";
+        getline(cin, command);
+        return command;
+    };
+
+    // Command function
+    void executeCommand(string command) {
+        EmployeeService employeeService;
+        string search;
+        string confirm;
+        if (command == "0") {
+            cout << "Exiting..." << endl;
+            return;
+        } else if(command == "1") {
+            employeeService.viewProfile(currUser);
+            return;
+        } else if(command == "2") {
+            if(currUser.role == "Manager" || currUser.role == "HumanResources") {
+                cout << "List of employees: " << endl;
+                employeeService.viewEmployees(currUser, employees);
+                return;
+            }
+        } else if(command == "3") {
+            if(currUser.role == "Manager" || currUser.role == "HumanResources") {
+                cout << "Enter name of employee: "; 
+                getline(cin, search);
+                employeeService.searchEmployee(search, employees);
+                return;
+            }
+        } else if(command == "4") {
+            if(currUser.role == "HumanResources") {
+                employeeService.addEmployee(employees);
+                return;
+            }
+        } else if(command == "5") {
+            if(currUser.role == "HumanResources") {
+                cout << "Enter uid of employee to remove: ";
+                getline(cin, search);
+                cout << "Are you sure you want to remove this employee? (y/n): ";
+                getline(cin, confirm);
+                if(confirm == "y") {
+                    employeeService.removeEmployee(search, employees);
+                }
+            }
+        }
+        else {
+            cout << "Invalid command!" << endl;
+            return;
+        }
+    }
 
 int main() {
 
@@ -75,8 +210,12 @@ int main() {
     // Create dummy data of employees
     Employee employee1("John Doe", 1, "johndoe", "password");
     Employee employee2("Jane Doe", 2, "janedoe", "password");
+    Manager manager1("Manager Doe", 3, "jeff", "admin");
+    HumanResources hr1("HR Doe", 4, "hr", "admin");
     employees.push_back(employee1);
     employees.push_back(employee2);
+    employees.push_back(manager1);
+    employees.push_back(hr1);
 
     string currUserName;
     string currPassword;
@@ -100,36 +239,15 @@ int main() {
         }
     }
 
-    cout << "List of commands: " << endl;
-    if (currUser.role == "GeneralEmployee") {
-        cout << "1. View your profile" << endl;
-        cout << "2. Exit" << endl;
-    } else if (currUser.role == "Manager") {
-        cout << "1. View your profile" << endl;
-        cout << "2. View all employees" << endl;
-        cout << "3. Exit" << endl;
-    } else if (currUser.role == "HumanResources") {
-        cout << "1. View your profile" << endl;
-        cout << "2. View all employees" << endl;
-        cout << "3. Add new employee" << endl;
-        cout << "4. Exit" << endl;
-    };
-
-    cout << "Enter your command: " << endl;
     string command;
-    getline(cin, command);
-
-    if(command == "1") {
-        employeeService.viewProfile(currUser);
-    } else if(command == "2") {
-        if (currUser.role == "GeneralEmployee") {
-            cout << "Exiting..." << endl;
-            return 0;
-        } else if(currUser.role == "Manager") {
-            cout << "List of employees: " << endl;
-            employeeService.viewEmployees(currUser, employees);
+    while(command != "0") {
+        cout << "Enter 'l' to list commands" << endl;
+        getline(cin, command);
+        if (command == "l") {
+            command = displayCommands(currUser);
         }
+        executeCommand(command);
     }
- 
+    
     return 0;
 };

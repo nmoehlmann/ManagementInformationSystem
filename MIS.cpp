@@ -125,6 +125,80 @@ class EmployeeService {
             }
             cout << "Employee added!" << endl;
         }
+
+        bool removeEmployee(int uid, vector<Employee> &employees, Employee currUser) {
+            if (uid == currUser.uid) {
+                cout << "You cannot remove yourself!" << endl;
+                return false;
+            }
+            for(int i = 0; i < employees.size(); i++) {
+                if(employees[i].uid == uid) {
+                    string confirm;
+                    cout << "Are you sure you want to remove this employee? (y/n): ";
+                    getline(cin, confirm);
+                    if(confirm != "y") {
+                        cout << "Employee not removed!" << endl;
+                        return false;
+                    }
+                    employees.erase(employees.begin() + i);
+                    cout << "Employee removed!" << endl;
+                    return true;
+                }
+            }
+            cout << "Employee not found!" << endl;
+            return false;
+        }
+
+        void updateEmployee(int uid, vector<Employee> &employees, Employee &currUser) {
+            for(int i = 0; i < employees.size(); i++) {
+                if(employees[i].uid == uid) {
+                    string name;
+                    string username;
+                    string password;
+                    string choice;
+        
+                    while (choice != "0") {
+                        cout << "Enter '0' to exit" << endl;
+                        cout << "1. Update name: " << employees[i].name << endl;
+                        cout << "2. Update username: " << employees[i].username << endl;
+                        cout << "3. Update password: " << employees[i].password << endl;
+                        getline(cin, choice);
+
+                        if(choice == "0") {
+                            break;
+                        } else if(choice == "1") {
+                            cout << "Enter new name: ";
+                            getline(cin, name);
+                            employees[i].name = name;
+                            // update name of current user if they are updating their own profile
+                            if(uid == currUser.uid) {
+                                currUser.name = name;
+                            }
+                            cout << "Name updated!" << endl;
+                        } else if(choice == "2") {
+                            cout << "Enter new username: ";
+                            getline(cin, username);
+                            employees[i].username = username;
+                            if(uid == currUser.uid) {
+                                currUser.username = username;
+                            }
+                            cout << "Username updated!" << endl;
+                        } else if(choice == "3") {
+                            cout << "Enter new password: ";
+                            getline(cin, password);
+                            employees[i].password = password;
+                            if(uid == currUser.uid) {
+                                currUser.password = password;
+                            }
+                            cout << "Password updated!" << endl;
+                        } else {
+                            cout << "Invalid command!" << endl;
+                        }
+                    }
+                }
+            }
+            return;
+        }
 };
 
     // Create a vector of employees globally
@@ -161,9 +235,9 @@ class EmployeeService {
     void executeCommand(string command) {
         EmployeeService employeeService;
         string search;
-        string confirm;
+        int uid;
         if (command == "0") {
-            cout << "Exiting..." << endl;
+            cout << "Goodbye ✋" << endl;
             return;
         } else if(command == "1") {
             employeeService.viewProfile(currUser);
@@ -188,14 +262,43 @@ class EmployeeService {
             }
         } else if(command == "5") {
             if(currUser.role == "HumanResources") {
-                cout << "Enter uid of employee to remove: ";
-                getline(cin, search);
-                cout << "Are you sure you want to remove this employee? (y/n): ";
-                getline(cin, confirm);
-                if(confirm == "y") {
-                    employeeService.removeEmployee(search, employees);
+                // input validation for uid. If user enters a string, it will clear the cin and ask for number again
+                while (true) {
+                    cout << "Enter uid of employee to remove: ";
+                    cin >> uid;
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore();
+                        cout << "Invalid input! Please enter a number" << endl;
+                    } else {
+                        cin.ignore();
+                        break;
+                    }
                 }
+                bool removalSuccess = employeeService.removeEmployee(uid, employees, currUser);
+                if (!removalSuccess) {
+                    return;
+                }
+                return;
             }
+        } else if(command == "6") {
+            if(currUser.role == "HumanResources") {
+                // input validation for uid. If user enters a string, it will clear the cin and ask for number again
+                while (true) {
+                    cout << "Enter uid of employee to remove: ";
+                    cin >> uid;
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore();
+                        cout << "Invalid input! Please enter a number" << endl;
+                    } else {
+                        cin.ignore();
+                        break;
+                    }
+                }
+                employeeService.updateEmployee(uid, employees, currUser);
+            }
+            return;
         }
         else {
             cout << "Invalid command!" << endl;
@@ -203,48 +306,59 @@ class EmployeeService {
         }
     }
 
+    void signIn() {
+        EmployeeService employeeService;
+        string currUserName;
+        string currPassword;
+        bool isAuthenticated = false;
+        while(isAuthenticated == false) {
+            // User enters their username here
+            cout << "Enter your username: " << endl;
+            getline(cin, currUserName);
+
+            // User enters their password here
+            cout << "Enter your password: " << endl;
+            getline(cin, currPassword);
+
+            // Check if the user is authenticated
+            isAuthenticated = employeeService.authenticate(currUserName, currPassword, employees, currUser);
+            if (isAuthenticated == true) {
+                cout << "You are authenticated!" << endl;
+            } else {
+                cout << "Authentication failed! Try again" << endl;
+            }
+        }
+        return;
+    }
+
 int main() {
 
     EmployeeService employeeService;
 
     // Create dummy data of employees
-    Employee employee1("John Doe", 1, "johndoe", "password");
-    Employee employee2("Jane Doe", 2, "janedoe", "password");
-    Manager manager1("Manager Doe", 3, "jeff", "admin");
-    HumanResources hr1("HR Doe", 4, "hr", "admin");
+    // Use to sign in and execute commands!
+    Employee employee1("Jimmy Brown", 1, "jimmyneutron", "1234");
+    Employee employee2("Jane Linn", 2, "janedoe", "password");
+    Manager manager1("Manny Valentine", 3, "MannyTheManager", "admin");
+    HumanResources hr1("Scott Sock", 4, "coolguy", "admin123");
     employees.push_back(employee1);
     employees.push_back(employee2);
     employees.push_back(manager1);
     employees.push_back(hr1);
 
-    string currUserName;
-    string currPassword;
-    bool isAuthenticated = false;
+    // Sign in
+    signIn();
 
-    while(isAuthenticated == false) {
-        // User enters their username here
-        cout << "Enter your username: " << endl;
-        getline(cin, currUserName);
-
-        // User enters their password here
-        cout << "Enter your password: " << endl;
-        getline(cin, currPassword);
-
-        // Check if the user is authenticated
-        isAuthenticated = employeeService.authenticate(currUserName, currPassword, employees, currUser);
-        if (isAuthenticated == true) {
-            cout << "You are authenticated!" << endl;
-        } else {
-            cout << "Authentication failed! Try again" << endl;
-        }
-    }
-
+    // Loop that will keep asking for commands until user exits or signs out
     string command;
     while(command != "0") {
-        cout << "Enter 'l' to list commands" << endl;
+        cout << "Enter 'l' to list commands or 's' to sign out" << endl;
         getline(cin, command);
         if (command == "l") {
             command = displayCommands(currUser);
+        } else if (command == "s") {
+            cout << "You have been signed out!" << endl;
+            signIn();
         }
         executeCommand(command);
     }
